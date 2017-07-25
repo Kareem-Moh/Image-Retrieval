@@ -83,10 +83,18 @@ int main(int argc, char **argv) {
 		// Otherwise ignore it.
 		if(S_ISDIR(sbuf.st_mode)) {
             	//printf("Processing all images in directory: %s \n", path);
-			CurrRecord = process_dir(path, img, STDOUT_FILENO);
-			if (CurrRecord.distance < CRec.distance){
-				CRec.distance = CurrRecord.distance;
-				strcpy(CRec.filename, CurrRecord.filename);
+			pid_t result = fork();
+			//If the process is the child process, call process_dir and pipe it back to the parent process
+			if (result == 0){
+				CurrRecord = process_dir(path, img, STDOUT_FILENO);
+				if (CurrRecord.distance < CRec.distance){
+					CRec.distance = CurrRecord.distance;
+					strcpy(CRec.filename, CurrRecord.filename);
+				}
+			}
+			else if (result < 0){
+				perror("fork");
+				exit(1);
 			}
 		}
 		else{

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 	char ch;
 	char path[PATHLENGTH];
 	char *startdir = ".";
-    char *image_file = argv[3];
+        char *image_file = argv[3];
 	Image *img = read_image(image_file);
 
 	while((ch = getopt(argc, argv, "d:")) != -1) {
@@ -55,8 +55,8 @@ int main(int argc, char **argv) {
 	*/
 	///*
 	struct dirent *dp;
-    CompRecord CRec;
-	CompRecord CurrRecord;
+    	CompRecord CRec;
+	//CompRecord CurrRecord;
 	CRec.distance = FLT_MAX;
 	while((dp = readdir(dirp)) != NULL) {
 
@@ -82,12 +82,12 @@ int main(int argc, char **argv) {
 		// Only call process_dir if it is a directory
 		// Otherwise ignore it.
 		if(S_ISDIR(sbuf.st_mode)) {
-            printf("Processing all images in directory: %s \n", path);
-			CurrRecord = process_dir(path, img, STDOUT_FILENO);
+            	//printf("Processing all images in directory: %s \n", path);
+			/*CurrRecord = process_dir(path, img, STDOUT_FILENO);
 			if (CurrRecord.distance < CRec.distance){
 				CRec.distance = CurrRecord.distance;
 				strcpy(CRec.filename, CurrRecord.filename);
-			}
+			}*/
 		}
 		else{
 			//printf("Comparing images...\nCurrent file name: %s\n", dp->d_name);
