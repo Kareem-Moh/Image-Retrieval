@@ -97,9 +97,10 @@ int main(int argc, char **argv) {
 				}
 			}
 			else if (result > 0){
+				
 				close(file_descriptors[1]);
 			}
-			else if (result < 0){
+			else {
 				perror("fork");
 				exit(1);
 			}
