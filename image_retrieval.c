@@ -58,6 +58,8 @@ int main(int argc, char **argv) {
     	CompRecord CRec;
 	CompRecord CurrRecord;
 	CRec.distance = FLT_MAX;
+	//Set up file descriptors
+	int file_descriptors[2];
 	while((dp = readdir(dirp)) != NULL) {
 
 		if(strcmp(dp->d_name, ".") == 0 || 
@@ -83,14 +85,19 @@ int main(int argc, char **argv) {
 		// Otherwise ignore it.
 		if(S_ISDIR(sbuf.st_mode)) {
             	//printf("Processing all images in directory: %s \n", path);
+			pipe(file_descriptors);
 			pid_t result = fork();
 			//If the process is the child process, call process_dir and pipe it back to the parent process
 			if (result == 0){
-				CurrRecord = process_dir(path, img, STDOUT_FILENO);
+				close(file_descriptors[0]);
+				CurrRecord = process_dir(path, img, file_descriptors[1]);
 				if (CurrRecord.distance < CRec.distance){
 					CRec.distance = CurrRecord.distance;
 					strcpy(CRec.filename, CurrRecord.filename);
 				}
+			}
+			else if (result > 0){
+				close(file_descriptors[1]);
 			}
 			else if (result < 0){
 				perror("fork");

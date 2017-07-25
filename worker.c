@@ -163,11 +163,14 @@ CompRecord process_dir(char *dirname, Image *img, int out_fd){
 				exit(1);
 			} 
 			if(S_ISDIR(sbuf.st_mode)) {
-				CurrRecord = process_dir(curr_file, img, STDOUT_FILENO);
-				if (CurrRecord.distance < Crec.distance){
-					Crec.distance = CurrRecord.distance;
-					strcpy(Crec.filename, CurrRecord.filename);
+				if (out_fd != STDOUT_FILENO){
+					CurrRecord = process_dir(curr_file, img, out_fd);
+					if (CurrRecord.distance < Crec.distance){
+						Crec.distance = CurrRecord.distance;
+						strcpy(Crec.filename, CurrRecord.filename);
+					}
 				}
+				
 			}	
 			else{
 				curr_diff = compare_images(img, curr_file);
@@ -187,6 +190,7 @@ CompRecord process_dir(char *dirname, Image *img, int out_fd){
 		perror ("");
 		return Crec;
 	}
+	write(out_fd, Crec, sizeof(Crec));
 	return Crec;
 }
 
