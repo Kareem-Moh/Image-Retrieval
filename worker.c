@@ -190,7 +190,7 @@ CompRecord process_dir(char *dirname, Image *img, int out_fd){
 		perror ("");
 		return Crec;
 	}
-	write(out_fd, Crec, sizeof(Crec));
+	write(out_fd, &Crec, sizeof(Crec));
 	return Crec;
 }
 
