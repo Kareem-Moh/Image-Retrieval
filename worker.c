@@ -129,6 +129,8 @@ float compare_images(Image *img1, char *filename) {
 * - keep track of the image that is most similar 
 * - write a struct CompRecord with the info for the most similar image to out_fd
 */
+
+/*
 CompRecord process_dir(char *dirname, Image *img, int out_fd){
 	//Create a directory object
 	DIR *dir;
@@ -164,23 +166,16 @@ CompRecord process_dir(char *dirname, Image *img, int out_fd){
 			} 
 			if(S_ISDIR(sbuf.st_mode)) {
 				if (out_fd != STDOUT_FILENO){
-					CurrRecord = process_dir(curr_file, img, out_fd);
+					CurrRecord = process_files(curr_file, img);
 					if (CurrRecord.distance < Crec.distance){
 						Crec.distance = CurrRecord.distance;
 						strcpy(Crec.filename, CurrRecord.filename);
 					}
 				}
-				
-			}	
-			else{
-				curr_diff = compare_images(img, curr_file);
-				//Check if the current difference is smaller than the CompRecords' current shortest
-				if (Crec.distance > curr_diff){
-					//Update the return CompRecord object's elements to the current file and distance
-					Crec.distance = curr_diff;
-					strcpy(Crec.filename, curr_file);
+				else {
+					
 				}
-			}
+			}	
 		}
 		//Close the opened directory
 		closedir (dir);
@@ -192,9 +187,74 @@ CompRecord process_dir(char *dirname, Image *img, int out_fd){
 	}
 	write(out_fd, &Crec, sizeof(Crec));
 	return Crec;
+}*/
+
+CompRecord process_dir(char *dirname, Image *img, int out_fd){
+	//Create a directory object
+	DIR *dir;
+	//Instatiate a directory entry
+	struct dirent *ent;
+	//Instatiate the return value CompRecord to have the max float value
+	CompRecord Crec;
+	//CompRecord CurrRecord;
+	Crec.distance = FLT_MAX;
+	//Instatiate the current difference float to be used in file iteration
+	float curr_diff;
+	//Create a curr file instance
+	char curr_file[PATHLENGTH];
+	
+	//Check if the directory can be opened
+	if ((dir = opendir(dirname)) != NULL) {
+		//Iterate through all files in the directory and store each file name in the file_names array
+		while ((ent = readdir(dir)) != NULL) {
+			if(strcmp(ent->d_name, ".") == 0 || 
+				strcmp(ent->d_name, "..") == 0 ||
+				strcmp(ent->d_name, ".svn") == 0){
+					continue;
+			}
+			strcpy(curr_file, dirname);
+			strncat(curr_file, "/", PATHLENGTH - strlen(curr_file) - 1);
+			strncat(curr_file, ent->d_name, PATHLENGTH - strlen(curr_file) - 1);
+			struct stat sbuf;
+			if(stat(curr_file, &sbuf) == -1) {
+				//This should only fail if we got the path wrong
+				// or we don't have permissions on this entry.
+				perror("stat");
+				exit(1);
+			} 
+			if(!S_ISDIR(sbuf.st_mode)) {
+				//if (out_fd == STDOUT_FILENO){
+					curr_diff = compare_images(img, curr_file);
+					//Check if the current difference is smaller than the CompRecords' current shortest
+					if (Crec.distance > curr_diff){
+						//Update the return CompRecord object's elements to the current file and distance
+						Crec.distance = curr_diff;
+						strcpy(Crec.filename, curr_file);
+					}
+				//}
+				//else{
+					
+				//}
+			}
+		}
+		//Close the opened directory
+		closedir (dir);
+	}
+	//If the directory can't be opened, error check
+	else {
+		perror ("");
+		return Crec;
+	}
+	if (out_fd == STDOUT_FILENO){
+		return Crec;
+	}
+	else{
+		//printf("(In worker.c) curr distance = %f\n", Crec.distance);
+		write(out_fd, &Crec, sizeof(CompRecord));
+		return Crec;
+	}
+	
 }
-
-
 
 
 

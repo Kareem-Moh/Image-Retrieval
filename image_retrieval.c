@@ -7,6 +7,8 @@
 #include <dirent.h>
 #include <float.h>
 #include "worker.h"
+#include <sys/types.h>
+#include <sys/wait.h>
 
 int main(int argc, char **argv) {
 	/*
@@ -21,8 +23,7 @@ int main(int argc, char **argv) {
 	char ch;
 	char path[PATHLENGTH];
 	char *startdir = ".";
-        char *image_file = argv[3];
-	Image *img = read_image(image_file);
+        char *image_file = NULL;
 
 	while((ch = getopt(argc, argv, "d:")) != -1) {
 		switch (ch) {
@@ -43,7 +44,6 @@ int main(int argc, char **argv) {
 	// Open the directory provided by the user (or current working directory)
 	
 	DIR *dirp;
-	startdir = argv[2];
 	if((dirp = opendir(startdir)) == NULL) {
 		perror("opendir");
 		exit(1);
@@ -54,12 +54,19 @@ int main(int argc, char **argv) {
 	* to process the image files contained in the directory.
 	*/
 	///*
+	//printf("The image file is: %s", image_file);
+	Image *img = read_image(image_file);
 	struct dirent *dp;
-    	CompRecord CRec;
-	CompRecord CurrRecord;
+    CompRecord CRec;
+	//CompRecord CurrRecord;
+	//CurrRecord.distance = FLT_MAX;
+	CompRecord *CurrRecord2 = malloc(sizeof(CompRecord));
 	CRec.distance = FLT_MAX;
-	//Set up file descriptors
-	int file_descriptors[2];
+	
+	pid_t fork_result;
+	int file_descriptors[255][2];
+	int directory_tracker = 0;
+	
 	while((dp = readdir(dirp)) != NULL) {
 
 		if(strcmp(dp->d_name, ".") == 0 || 
@@ -80,44 +87,54 @@ int main(int argc, char **argv) {
 			perror("stat");
 			exit(1);
 		} 
-		float curr_distance;
+		//float curr_distance;
 		// Only call process_dir if it is a directory
 		// Otherwise ignore it.
 		if(S_ISDIR(sbuf.st_mode)) {
-            	//printf("Processing all images in directory: %s \n", path);
-			pipe(file_descriptors);
-			pid_t result = fork();
-			//If the process is the child process, call process_dir and pipe it back to the parent process
-			if (result == 0){
-				close(file_descriptors[0]);
-				CurrRecord = process_dir(path, img, file_descriptors[1]);
-				if (CurrRecord.distance < CRec.distance){
-					CRec.distance = CurrRecord.distance;
-					strcpy(CRec.filename, CurrRecord.filename);
-				}
-			}
-			else if (result > 0){
+            pipe(file_descriptors[directory_tracker]);
+			fork_result = fork();
+			
+			if (fork_result == 0){
+				close(file_descriptors[directory_tracker][0]);
+				process_dir(path, img, file_descriptors[directory_tracker][1]);
+				exit(0);
 				
-				close(file_descriptors[1]);
 			}
-			else {
+			else if (fork_result > 0){
+				close(file_descriptors[directory_tracker][1]);
+			}
+			else{
 				perror("fork");
-				exit(1);
+                exit(1);
 			}
+			directory_tracker++;
+
+		}
+	}
+	for (int i = 0; i < directory_tracker; i++){
+		pid_t pid;
+		int status;
+		if ((pid = wait(&status)) == -1){
+			perror("wait");
 		}
 		else{
-			//printf("Comparing images...\nCurrent file name: %s\n", dp->d_name);
-			//printf("Path: %s\n", path);
-			curr_distance = compare_images(img, path);
-			
-			if (curr_distance <= CRec.distance){
-				CRec.distance = curr_distance;
-				strcpy(CRec.filename, dp->d_name);
+			//printf("Child %d terminated with %d\n", pid, status);
+		}
+	}
+	if (fork_result > 0){
+		for (int i = 0; i < directory_tracker; i++){
+			read(file_descriptors[i][0], CurrRecord2, sizeof(CompRecord));
+			//printf("(For loop values) Distance = %f Filename = %s\n", CurrRecord2->distance, CurrRecord2->filename);
+			if (CurrRecord2->distance < CRec.distance){
+				CRec.distance = CurrRecord2->distance;
+				strcpy(CRec.filename, CurrRecord2->filename);
 			}
 		}
-		
+		//printf("fork value: %d\n", fork_result);
+		printf("The most similar image is %s with a distance of %f\n", CRec.filename, CRec.distance);
 	}
-    printf("The most similar image is %s with a distance of %f\n", CRec.filename, CRec.distance);
+	//printf("fork value: %d\n", fork_result);
+	
 	//*/
 	return 0;
 }

@@ -8,6 +8,8 @@
 #include <float.h>
 #include "worker.h"
 
+
+
 int main(int argc, char **argv) {
 	/*
 	//TESTING FRAME
@@ -21,8 +23,7 @@ int main(int argc, char **argv) {
 	char ch;
 	char path[PATHLENGTH];
 	char *startdir = ".";
-        char *image_file = argv[3];
-	Image *img = read_image(image_file);
+        char *image_file = NULL;
 
 	while((ch = getopt(argc, argv, "d:")) != -1) {
 		switch (ch) {
@@ -43,7 +44,6 @@ int main(int argc, char **argv) {
 	// Open the directory provided by the user (or current working directory)
 	
 	DIR *dirp;
-	startdir = argv[2];
 	if((dirp = opendir(startdir)) == NULL) {
 		perror("opendir");
 		exit(1);
@@ -54,9 +54,11 @@ int main(int argc, char **argv) {
 	* to process the image files contained in the directory.
 	*/
 	///*
+	//printf("The image file is: %s", image_file);
+	Image *img = read_image(image_file);
 	struct dirent *dp;
-    	CompRecord CRec;
-	//CompRecord CurrRecord;
+    CompRecord CRec;
+	CompRecord CurrRecord;
 	CRec.distance = FLT_MAX;
 	while((dp = readdir(dirp)) != NULL) {
 
@@ -78,28 +80,17 @@ int main(int argc, char **argv) {
 			perror("stat");
 			exit(1);
 		} 
-		float curr_distance;
+		//float curr_distance;
 		// Only call process_dir if it is a directory
 		// Otherwise ignore it.
 		if(S_ISDIR(sbuf.st_mode)) {
-            	//printf("Processing all images in directory: %s \n", path);
-			/*CurrRecord = process_dir(path, img, STDOUT_FILENO);
+            //printf("Processing all images in directory: %s \n", path);
+			CurrRecord = process_dir(path, img, STDOUT_FILENO);
 			if (CurrRecord.distance < CRec.distance){
 				CRec.distance = CurrRecord.distance;
 				strcpy(CRec.filename, CurrRecord.filename);
-			}*/
-		}
-		else{
-			//printf("Comparing images...\nCurrent file name: %s\n", dp->d_name);
-			//printf("Path: %s\n", path);
-			curr_distance = compare_images(img, path);
-			
-			if (curr_distance <= CRec.distance){
-				CRec.distance = curr_distance;
-				strcpy(CRec.filename, dp->d_name);
 			}
 		}
-		
 	}
     printf("The most similar image is %s with a distance of %f\n", CRec.filename, CRec.distance);
 	//*/
