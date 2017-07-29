@@ -250,7 +250,9 @@ CompRecord process_dir(char *dirname, Image *img, int out_fd){
 	}
 	else{
 		//printf("(In worker.c) curr distance = %f\n", Crec.distance);
-		write(out_fd, &Crec, sizeof(CompRecord));
+		if ((write(out_fd, &Crec, sizeof(CompRecord))) ==  -1){
+			perror("write to pipe");
+		}
 		return Crec;
 	}
 	

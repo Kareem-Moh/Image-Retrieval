@@ -48,6 +48,11 @@ int main(int argc, char **argv) {
 		perror("opendir");
 		exit(1);
 	} 
+	
+	/* For each entry in the directory, eliminate . and .., and check
+	* to make sure that the entry is a directory, then call run_worker
+	* to process the image files contained in the directory.
+	*/
 	//*/
 	/* For each entry in the directory, eliminate . and .., and check
 	* to make sure that the entry is a directory, then call run_worker
@@ -55,16 +60,20 @@ int main(int argc, char **argv) {
 	*/
 	///*
 	//printf("The image file is: %s", image_file);
+	//printf("The image file is: %s\n", image_file);
+	//printf("The starting directory is: %s\n", startdir);
+	//printf("THE CODE REACHES HERE");
 	Image *img = read_image(image_file);
 	struct dirent *dp;
     CompRecord CRec;
 	CompRecord CurrRecord;
 	CRec.distance = FLT_MAX;
 	while((dp = readdir(dirp)) != NULL) {
-
+		
 		if(strcmp(dp->d_name, ".") == 0 || 
 		   strcmp(dp->d_name, "..") == 0 ||
-		   strcmp(dp->d_name, ".svn") == 0){
+		   strcmp(dp->d_name, ".svn") == 0 ||
+		   strcmp(dp->d_name, ".git") == 0){
 			continue;
 		}
 		strncpy(path, startdir, PATHLENGTH);

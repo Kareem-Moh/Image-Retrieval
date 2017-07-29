@@ -71,7 +71,8 @@ int main(int argc, char **argv) {
 
 		if(strcmp(dp->d_name, ".") == 0 || 
 		   strcmp(dp->d_name, "..") == 0 ||
-		   strcmp(dp->d_name, ".svn") == 0){
+		   strcmp(dp->d_name, ".svn") == 0 ||
+		   strcmp(dp->d_name, ".git") == 0){
 			continue;
 		}
 		strncpy(path, startdir, PATHLENGTH);
@@ -123,7 +124,9 @@ int main(int argc, char **argv) {
 	}
 	if (fork_result > 0){
 		for (int i = 0; i < directory_tracker; i++){
-			read(file_descriptors[i][0], CurrRecord2, sizeof(CompRecord));
+			if ((read(file_descriptors[i][0], CurrRecord2, sizeof(CompRecord))) == -1){
+				perror("read from pipe");
+			}
 			//printf("(For loop values) Distance = %f Filename = %s\n", CurrRecord2->distance, CurrRecord2->filename);
 			if (CurrRecord2->distance < CRec.distance){
 				CRec.distance = CurrRecord2->distance;
